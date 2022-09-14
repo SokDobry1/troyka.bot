@@ -1,4 +1,4 @@
-#v1.0
+#v1.0.1
 
 import requests
 from bs4 import BeautifulSoup as bs
