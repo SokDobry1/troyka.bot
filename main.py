@@ -1,36 +1,56 @@
-from importer import *
+from mikrotik_api import Mikrotik_api as mk_api
+from pult_api import Pult_api as pult_api
+from transliterate import translit
 
-from threading import Thread
+def mac_checker(mac):
+    if len(mac.split(":")) != 6 and len(mac.split("-")) != 6:
+        return False
+    return True
 
-from vk_api.longpoll import VkLongPoll, VkEventType
-from vkapi import longpoll, vk_session
+mk = mk_api()
+pult = pult_api()
 
+print("""Добро пожаловать в меню скрипта. Выберите задачу:
+1) Создать пользователя
+2) Добавить ip адреса""")
+answ = input()
+if answ == "2": raise Exception("Временно недоступно")
 
-if __name__ == '__main__':
-    while True:
-        try:
-            for event in longpoll.listen():
-                #Если пришло новое сообщение
-                if event.type == VkEventType.MESSAGE_NEW:
-                    if event.to_me:
-                        request = {"body": event.text,
-                                "user_id": event.user_id}
-                        try:
-                            request.update({"payload": event.payload})
-                        except:
-                            pass
-                        
-                        message_handler.create_answer(request)
-        except: longpoll = VkLongPoll(vk_session)
-            
+name = {"f": "", "i": "", "o": ""}
+name["f"] = input("Введите фамилию: ")
+name["i"] = input("Введите имя: ")
+name["o"] = input("Введите отчество: ")
 
-
-
-
-
+if answ == "1":
+    tarifs = pult.get_tarifs(937) # {<Имя тарифа>: {"tarifid": <Айди тарифа>, "price": <Стоимость>}}
+    print(*[i for i in tarifs], "Введите название тарифа, выше доступные тарифы (лучше копировать название):", sep='\n')
+    selected_tarif = input()
+    tarifs[selected_tarif]
 
 
+    uid = pult.create_user(name)
+    pult.add_auth_without_login(uid)
+    pult.add_status(uid)
+    pult.add_tarif(uid, tarifs[selected_tarif]["tarifid"])
+    pult.deposit_money(uid, tarifs[selected_tarif]["price"])
 
+while True:
+    print("Добавляем:\n1)Проводное устройство\n2)Беспроводное устройство")
+    inp = input()
+    if inp == "1":
+        mac = input("Введите MAC адрес устройства: ")
+        while not mac_checker(mac): mac = input("Введите MAC адрес устройства: ")
 
+        data = mk.find_free_ip()
+        mk.remove_slot(data)
+        mk.add_user(data, mac, translit(f"{name['f']} {name['i']}", language_code='ru', reversed=True))
+        pult.add_ip(uid, data["=address"])
+    elif inp == "2":
+        mac = input("Введите MAC адрес устройства: ")
+        while not mac_checker(mac): mac = input("Введите MAC адрес устройства: ")
 
-
+        data = mk.find_free_ip(wireless=True)
+        mk.remove_slot(data)
+        mk.add_user(data, mac, "MOBILE: " +translit(f"{name['f']} {name['i']}", language_code='ru', reversed=True))
+        pult.add_ip(uid, data["=address"])
+    else: break

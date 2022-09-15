@@ -4,9 +4,44 @@ from secure import mikrotik as mk
 
 class Mikrotik_api:
     "Routeros api"
-    def __init__(self, sk):
-        self.sk = sk
+    def __init__(self):
+        self.sk = self.open_socket(mk.dst, "8728")
+        if self.sk is None: raise RuntimeError('could not open socket') 
         self.currenttag = 0
+        if not self.login(): raise Exception("Неправильный логин или пароль") 
+
+    def fill_free_slots(self):
+        ip =[f"10.24.{i1}.{i2}" for i1 in range(196,198+1) for i2 in range(1,256)]
+        ip +=[f"10.24.{i1}.{i2}" for i1 in range(200,201+1) for i2 in range(1,256)]
+        for i in ip:
+            print(i)
+            data = self.talk(["/ip/dhcp-server/lease/print", "=proplist=address", f"?address={i}"])[0]
+            if data[0] != "!re":
+                mac = i + "fff"
+                self.talk(["/ip/dhcp-server/lease/add", f"=address={i}", "=comment=FREE SLOT", \
+                          f"=mac-address=10:24:{mac[6:8]}:{mac[8]}{mac[10]}:{mac[11:13]}:01"])
+                print("Внёс пустой слот")
+
+    def find_free_ip(self, wireless=False): #Возвращает список информации о слоте
+        ip = []
+        if wireless: ip =[f"10.24.{i1}.{i2}" for i1 in range(196,198+1) for i2 in range(1,256)]
+        else: ip =[f"10.24.{i1}.{i2}" for i1 in range(200,201+1) for i2 in range(1,256)]
+        data = self.talk(["/ip/dhcp-server/lease/print", "?comment=FREE SLOT"])[:-1]
+        for i in data:
+            if i[1]["=address"] in ip:
+                return i[1]
+
+    def remove_slot(self, slot_data): # Удаляет слот (достаточно только id слота)
+        answ = self.talk(["/ip/dhcp-server/lease/remove", f"=numbers={slot_data['=.id']}"])
+        if answ[0][0] != "!done": raise Exception("Ошибка удаления слота")
+
+
+    def add_user(self, slot_data, mac, comment): #Создаёт пользователя
+        answ = self.talk(["/ip/dhcp-server/lease/add", f"=address={slot_data['=address']}", 
+                          f"=mac-address={mac}",
+                          f"=comment={comment}"])
+        if answ[0][0] != "!done": raise Exception("Ошибка при создании пользователя")                          
+
 
     def login(self):
         for repl, attrs in self.talk(["/login", "=name=" + mk.login,
@@ -154,21 +189,29 @@ class Mikrotik_api:
             # print((">>> " + s.decode(sys.stdout.encoding, 'ignore')))
             ret += s.decode(sys.stdout.encoding, "replace")
         return ret
+
+    def open_socket(self, dst, port, secure=False):
+        s = None
+        res = socket.getaddrinfo(dst, port, socket.AF_UNSPEC, socket.SOCK_STREAM)
+        af, socktype, proto, canonname, sockaddr = res[0]
+        skt = socket.socket(af, socktype, proto)
+        if secure:
+            s = ssl.wrap_socket(skt, ssl_version=ssl.PROTOCOL_TLSv1_2, ciphers="ADH-AES128-SHA256") #ADH-AES128-SHA256
+        else:
+            s = skt
+        s.connect(sockaddr)
+        return s
+
+   
+if __name__ == '__main__': #Мусор для тестов
+    from transliterate import translit
+    text = translit("Шаймарданова Ляйсан", language_code='ru', reversed=True)
+    #mk = Mikrotik_api()
+    #print(mk.remove_slot({"=.id": "*17D571"}))
+    #mk.fill_free_slots()
+    #x=mk.talk(["/ip/dhcp-server/lease/remove", "=numbers=*17D56E"])#?address=10.24.196"]))
     
-
-def open_socket(dst, port, secure=False):
-  s = None
-  res = socket.getaddrinfo(dst, port, socket.AF_UNSPEC, socket.SOCK_STREAM)
-  af, socktype, proto, canonname, sockaddr = res[0]
-  skt = socket.socket(af, socktype, proto)
-  if secure:
-    s = ssl.wrap_socket(skt, ssl_version=ssl.PROTOCOL_TLSv1_2, ciphers="ADH-AES128-SHA256") #ADH-AES128-SHA256
-  else:
-    s = skt
-  s.connect(sockaddr)
-  return s
-
-s = open_socket(mk.dst, 8728)
-m = Mikrotik_api(s)
-print(m.talk(["/login", "=name=Alf","=password=12351235ap"]))
-print(m.talk(["/ip/dhcp-server/lease/print", "?address=10.24.196.150"]))
+    #i = "10.24.200.47"+"0"
+    #print(f"=mac-address=10:24:{i[6:8]}:{i[8]}{i[10]}:{i[11:13]}:00")
+    #print(mk.talk(["/ip/dhcp-server/lease/add", f"=address={i}", "=comment=FREE SLOT", \
+                          #f"=mac-address=10:24:{i[6:8]}:{i[8]}{i[10]}:{i[11:13]}:00"]))
