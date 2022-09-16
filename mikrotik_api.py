@@ -10,17 +10,31 @@ class Mikrotik_api:
         self.currenttag = 0
         if not self.login(): raise Exception("Неправильный логин или пароль") 
 
-    def fill_free_slots(self):
+    def fill_free_slots(self, start="10.24.196.1"):
+        from pult_api import Pult_api as pult
+        pult = pult()
         ip =[f"10.24.{i1}.{i2}" for i1 in range(196,198+1) for i2 in range(1,256)]
         ip +=[f"10.24.{i1}.{i2}" for i1 in range(200,201+1) for i2 in range(1,256)]
+        ip = ip[ip.index(start):]
         for i in ip:
             print(i)
             data = self.talk(["/ip/dhcp-server/lease/print", "=proplist=address", f"?address={i}"])[0]
+
+            if data[0] == "!re":
+                pos = data[1]["=last-seen"].find("w")
+                if pos+1:
+                    if int(data[1]["=last-seen"][:pos]) > 100:
+                        print(f"Устройство {data[1]['=comment']} не выходило на связь уже {data[1]['=last-seen'][:pos]} недель и было удалено",
+                            f"MAC адрес: {data[1]['=mac-address']}", sep="\n")
+                        self.remove_slot(data[1])
+                        try:
+                            uid = pult.find_uid(ip=data[1]["=address"])
+                            pult.remove_ip(uid, data[1]["=address"])
+                        except: pass
+                        data = (None, None)
+
             if data[0] != "!re":
-                mac = i + "fff"
-                self.talk(["/ip/dhcp-server/lease/add", f"=address={i}", "=comment=FREE SLOT", \
-                          f"=mac-address=10:24:{mac[6:8]}:{mac[8]}{mac[10]}:{mac[11:13]}:01"])
-                print("Внёс пустой слот")
+                self.add_free_slot(data[1])
 
     def find_free_ip(self, wireless=False): #Возвращает список информации о слоте
         ip = []
@@ -31,9 +45,22 @@ class Mikrotik_api:
             if i[1]["=address"] in ip:
                 return i[1]
 
+    def get_ip_data(self, ip):
+        data = self.talk(["/ip/dhcp-server/lease/print", f"?address={ip}"])[0]
+        if data[0] != "!re": data = (None, None)
+        return data[1]
+
     def remove_slot(self, slot_data): # Удаляет слот (достаточно только id слота)
         answ = self.talk(["/ip/dhcp-server/lease/remove", f"=numbers={slot_data['=.id']}"])
         if answ[0][0] != "!done": raise Exception("Ошибка удаления слота")
+        print(f"Слот IP {slot_data['=address']} удалён")
+        
+
+    def add_free_slot(self, slot_data):
+        i = slot_data["=address"]; mac = i + "fff"
+        self.talk(["/ip/dhcp-server/lease/add", f"=address={i}", "=comment=FREE SLOT", \
+                  f"=mac-address=10:24:{mac[6:8]}:{mac[8]}{mac[10]}:{mac[11:13]}:01"])
+        print("Внёс пустой слот")
 
 
     def add_user(self, slot_data, mac, comment): #Создаёт пользователя

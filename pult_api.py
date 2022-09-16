@@ -66,7 +66,7 @@ class Pult_api:
         from datetime import datetime
         date_start = f"{datetime.now().day}.{datetime.now().month}.{datetime.now().year}"
         _url=f"https://pult.well-telecom.ru/?mod=users&act=edituserservice&uid={uid}&reload=yes&show=noheader&service=INET&bw_type=AUTO&noipcost=0&tarifid={tarifid}&date_start={date_start}&curdescription&save=Сохранить изменения"
-        response = requests.get(_url, headers=self.headers)
+        response = requests.post(_url, headers=self.headers)
         print("Добавлен тариф")
 
     def add_status(self, uid):
@@ -74,13 +74,13 @@ class Pult_api:
         from datetime import datetime
         date_start = f"{datetime.now().day}.{datetime.now().month}.{datetime.now().year}"
         _url = f"https://pult.well-telecom.ru/?mod=users&act=statuschange&uid={uid}&newstatus=1&datestart={date_start}&timestart=00:00:00&save=1&confirmed=Подтвердить назначение нового статуса"
-        response = requests.get(_url, headers=self.headers)
+        response = requests.post(_url, headers=self.headers)
         print("Создан статус активности")
 
     def add_auth_without_login(self, uid):
         
         _url = f"https://pult.well-telecom.ru/?mod=users&act=editusr&uid={uid}&save=1&shortname=&login={uid}&pwd1=&pwd2=&lknopass_enable=1&email=&lim_money=0&lim_months=0&money_alert_porog=50&phone1=&phone2=&phone3=&sms=&sms_old=&sms_lang_old=&sms_status_old=&sms_lang=RUS&sms_status=ACTIVE&objid=5075&street_561433143=&flat=&par=&flor=&chtarif=1"
-        response = requests.get(_url, headers=self.headers)
+        response = requests.post(_url, headers=self.headers)
         print("Включена функция входа без логина и пароля")
 
     def deposit_money(self, uid, amount):
@@ -95,22 +95,49 @@ class Pult_api:
         from datetime import datetime
         cur_date = f"{datetime.now().day}.{datetime.now().month}.{datetime.now().year}"
         _url = f"https://pult.well-telecom.ru/?mod=users&act=addpay&uid={uid}&pay_unique={rand_hex_gen()}&pay_type=1&pay_docnum=&datepay={cur_date}&sumpay={amount}&confirmed_pay=1&pay_doc=&save=Зачислить+на+лицевой+счет"
-        response = requests.get(_url, headers=self.headers)
+        response = requests.post(_url, headers=self.headers)
         print(f"Внесены средства в размере {amount} рублей")
 
     def add_ip(self, uid, ipaddr, comment=""):
         
         _url = f"https://pult.well-telecom.ru/?mod=users&act=editip&uid={uid}&id=&service=33653&ipaddr={ipaddr}&mac=&comment={comment}&enable=on&autoban=on&autoban_smtp=on&save=Добавить"
-        response = requests.get(_url, headers=self.headers)
+        response = requests.post(_url, headers=self.headers)
         print(f"Добавлен ip: {ipaddr}")
 
+    def find_uid(self, ip="", name=""):
+        if ip:
+            _url = f"https://pult.well-telecom.ru/?mod=users&act=list&go=1&searchwellpay=&search_region=0&search_district=&objectname=&objid=&street=&par=&flor=&flat=&wherefind=fullname&part=all&query=&phone=&userIp[]={ip}&searchmac=&searchvlan=&search_service=&userstatus=-2&statusdaysznak=min&statusdays=&traffic_last_days=&cli_type=&paytype=-1&speedtype=&isvip=&isPon=&minbalanceznak=>&minbalance=&loyalty=&ticksign=>&tickcnt=&trf_inet_price_sign=>&trf_inet_price=&trf_other_price_sign=>&trf_other_price=&users_equipment_name=&users_equipment_desc=&ticket_last_date=&go=1"
+        elif name: _url = f"https://pult.well-telecom.ru/?mod=users&act=list&go=1&searchwellpay=&search_region=0&search_district=&objectname=&objid=&street=&par=&flor=&flat=&wherefind=fullname&part=all&query={name}&phone=&searchmac=&searchvlan=&search_service=&userstatus=-2&statusdaysznak=min&statusdays=&traffic_last_days=&cli_type=&paytype=-1&speedtype=&isvip=&isPon=&minbalanceznak=>&minbalance=&loyalty=&ticksign=>&tickcnt=&trf_inet_price_sign=>&trf_inet_price=&trf_other_price_sign=>&trf_other_price=&users_equipment_name=&users_equipment_desc=&ticket_last_date=&go=1"
+        response = requests.get(_url, headers=self.headers)
+        data = bs(response.text, "html.parser").find_all("tr", {"class":"first"})
+        if len(data):
+            uid = data[0].a.contents[0]
+            return uid
+        raise Exception("Ничего не найдено")
+
+    def remove_ip(self, uid, ip):
+        _url = f"https://pult.well-telecom.ru/?mod=users&act=viewips&uid={uid}"
+        response = requests.get(_url, headers=self.headers)
+        data = bs(response.text, "html.parser").find_all("table", {"class":"Users"})[0]
+        list_lines = data.find_all("tr")[1:]
+        for i in list_lines:
+            cur_ip = i.b.contents[0]
+            if cur_ip == ip:
+                ip_id = i.find_all("input")[2]["value"]
+                _url = f"https://pult.well-telecom.ru/?mod=users&act=viewips&uid={uid}&delip={ip_id}"
+                response = requests.post(_url, headers=self.headers)
+                print(f"IP {cur_ip} удалён у пользователя {uid}")
+                return
+        raise Exception("IP не обнаружен")
     
 
 
 
-"""
-if __name__ == '__main__':
 
+if __name__ == '__main__':
+    pult = Pult_api()
+    pult.remove_ip("17261", "10.24.200.81")
+"""
     name = {"f": "", "i": "", "o": ""}
     name["f"] = input("Введите фамилию: ")
     name["i"] = input("Введите имя: ")
