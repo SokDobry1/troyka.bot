@@ -31,10 +31,10 @@ class Mikrotik_api:
                             uid = pult.find_uid(ip=data[1]["=address"])
                             pult.remove_ip(uid, data[1]["=address"])
                         except: pass
-                        data = (None, None)
+                        data = (None, data[1])
 
             if data[0] != "!re":
-                self.add_free_slot(data[1])
+                self.add_free_slot({"=address": i})
 
     def find_free_ip(self, wireless=False): #Возвращает список информации о слоте
         ip = []
