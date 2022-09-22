@@ -1,24 +1,17 @@
 restart = True # Если какого то модуля нет, то нужно будет перезапустить мэйн
 
 try:
-    import json
+    import bs4
 except:
     import pip
-    pip.main(['install', 'json'])
+    pip.main(['install', 'bs4'])
     restart = False
 
 try:
-    import vk_api
+    import transliterate
 except:
     import pip
-    pip.main(['install', 'vk_api'])
-    restart = False
-
-try:
-    import vk
-except:
-    import pip
-    pip.main(['install', 'vk'])
+    pip.main(['install', 'transliterate'])
     restart = False
 
 assert restart, "Все модули установлены, перезапустите главную программу"
