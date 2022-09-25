@@ -113,7 +113,7 @@ class Pult_api:
         if len(data):
             uid = data[0].a.contents[0]
             return uid
-        raise Exception("Ничего не найдено")
+        raise Exception("Пользователь не найден")
 
     def remove_ip(self, uid, ip):
         _url = f"https://pult.well-telecom.ru/?mod=users&act=viewips&uid={uid}"

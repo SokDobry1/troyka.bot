@@ -18,7 +18,7 @@ print("""Добро пожаловать в меню скрипта. Выбер�
 4) Удалить ip адрес из профиля""")
 answ = input()
 
-if answ in ["1","2", "4"]:
+if answ in ["1","2",]:
     name = {"f": "", "i": "", "o": ""}
     name["f"] = input("Введите фамилию: ")
     name["i"] = input("Введите имя: ")
@@ -37,7 +37,7 @@ if answ == "1":
     pult.add_tarif(uid, tarifs[selected_tarif]["tarifid"])
     pult.deposit_money(uid, tarifs[selected_tarif]["price"])
 
-if answ in ["2","4"]: uid = pult.find_uid(name=f"{name['f']}+{name['i']}+{name['o']}")
+if answ in ["2",]: uid = pult.find_uid(name=f"{name['f']}+{name['i']}+{name['o']}")
 
 if answ in ["1","2"]:
     while True:
@@ -72,4 +72,5 @@ if answ == "4":
     data = mk.get_ip_data(ip)
     mk.remove_slot(data)
     mk.add_free_slot(data)
+    uid = pult.find_uid(ip=ip)
     pult.remove_ip(uid, ip)
