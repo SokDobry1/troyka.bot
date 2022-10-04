@@ -18,10 +18,11 @@ try:
 1) Создать пользователя
 2) Добавить ip адреса
 3) Заполнить таблицу mikrotik пустыми слотами
-4) Удалить ip адрес из профиля""")
+4) Удалить ip адрес из профиля
+5) Добавить денег на счёт""")
     answ = input()
 
-    if answ in ["1","2",]:
+    if answ in ["1","2","5",]:
         name = {"f": "", "i": "", "o": ""}
         name["f"] = input("Введите фамилию: ")
         name["i"] = input("Введите имя: ")
@@ -42,7 +43,10 @@ try:
         pult.add_tarif(uid, tarifs[selected_tarif]["tarifid"])
         pult.deposit_money(uid, tarifs[selected_tarif]["price"])
 
-    if answ in ["2",]: uid = pult.find_uid(name=f"{name['f']}+{name['i']}")
+    if answ in ["2","5"]: 
+        if name["i"] == "": temp = f"{name['f']}"
+        else: temp = f"{name['f']}+{name['i']}"
+        uid = pult.find_uid(name=temp)
 
     if answ in ["1","2"]:
         while True:
@@ -79,6 +83,10 @@ try:
         mk.add_free_slot(data)
         uid = pult.find_uid(ip=ip)
         pult.remove_ip(uid, ip)
+
+    if answ == "5":
+        amount = input("Введите количество денег для внесения: ")
+        pult.deposit_money(uid, amount)
 
 except Exception as e:
     print("Ошибка в работе:", e, sep=" ")

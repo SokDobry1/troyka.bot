@@ -96,7 +96,7 @@ class Pult_api:
         cur_date = f"{datetime.now().day}.{datetime.now().month}.{datetime.now().year}"
         _url = f"https://pult.well-telecom.ru/?mod=users&act=addpay&uid={uid}&pay_unique={rand_hex_gen()}&pay_type=1&pay_docnum=&datepay={cur_date}&sumpay={amount}&confirmed_pay=1&pay_doc=&save=Зачислить+на+лицевой+счет"
         response = requests.post(_url, headers=self.headers)
-        print(f"Внесены средства в размере {amount} рублей")
+        print(f"Внесены средства в размере {amount} рублей пользователю {uid}")
 
     def add_ip(self, uid, ipaddr, comment=""):
         
