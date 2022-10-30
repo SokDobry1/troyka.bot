@@ -1,4 +1,4 @@
-import sys, posix, time, binascii, socket, select, ssl
+import sys, time, binascii, socket, select, ssl
 import hashlib
 from secure import mikrotik as mk
 

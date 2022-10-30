@@ -99,8 +99,8 @@ class Pult_api:
         print(f"Внесены средства в размере {amount} рублей пользователю {uid}")
 
     def add_ip(self, uid, ipaddr, comment=""):
-        
-        _url = f"https://pult.well-telecom.ru/?mod=users&act=editip&uid={uid}&id=&service=33653&ipaddr={ipaddr}&mac=&comment={comment}&enable=on&autoban=on&autoban_smtp=on&save=Добавить"
+        service = self.get_service(uid)
+        _url = f"https://pult.well-telecom.ru/?mod=users&act=editip&uid={uid}&id=&service={service}&ipaddr={ipaddr}&mac=&comment={comment}&enable=on&autoban=on&autoban_smtp=on&save=Добавить"
         response = requests.post(_url, headers=self.headers)
         print(f"Добавлен ip: {ipaddr}")
 
@@ -129,6 +129,14 @@ class Pult_api:
                 print(f"IP {cur_ip} удалён у пользователя {uid}")
                 return
         raise Exception("IP не обнаружен")
+
+    def get_service(self, uid):
+        _url = f"https://pult.well-telecom.ru/?mod=users&act=services&uid={uid}"
+        response = requests.get(_url, headers=self.headers)
+        data = bs(response.text, "html.parser").find_all("table", {"class":"Users"})[0]
+        line = data.find_all("tr")[1]
+        return line.contents[0].contents[0]
+
     
 
 
@@ -136,7 +144,7 @@ class Pult_api:
 
 if __name__ == '__main__':
     pult = Pult_api()
-    pult.remove_ip("17261", "10.24.200.81")
+    pult.get_service(15287)
 """
     name = {"f": "", "i": "", "o": ""}
     name["f"] = input("Введите фамилию: ")

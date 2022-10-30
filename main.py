@@ -14,7 +14,8 @@ try:
     mk = mk_api()
     pult = pult_api()
 
-    print("""Добро пожаловать в меню скрипта. Выберите задачу:
+    print("""V 1.0 30.10.22
+Добро пожаловать в меню скрипта. Выберите задачу:
 1) Создать пользователя
 2) Добавить ip адреса
 3) Заполнить таблицу mikrotik пустыми слотами
@@ -78,11 +79,13 @@ try:
 
     if answ == "4":
         ip = input("Введите IP для удаления: ")
-        data = mk.get_ip_data(ip)
-        mk.remove_slot(data)
-        mk.add_free_slot(data)
-        uid = pult.find_uid(ip=ip)
-        pult.remove_ip(uid, ip)
+        while ip:
+            data = mk.get_ip_data(ip)
+            mk.remove_slot(data)
+            mk.add_free_slot(data)
+            uid = pult.find_uid(ip=ip)
+            pult.remove_ip(uid, ip)
+            ip = input("Введите IP для удаления: ")
 
     if answ == "5":
         amount = input("Введите количество денег для внесения: ")

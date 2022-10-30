@@ -14,4 +14,11 @@ except:
     pip.main(['install', 'transliterate'])
     restart = False
 
+try:
+    import requests
+except:
+    import pip
+    pip.main(['install', 'requests'])
+    restart = False
+
 assert restart, "Все модули установлены, перезапустите главную программу"
